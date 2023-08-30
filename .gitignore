@@ -1,0 +1,9 @@
+.vscode
+*.pyc
+__pycache__
+
+credentials.json
+token.json
+config.py
+
+*.db
