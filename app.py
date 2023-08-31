@@ -1,5 +1,7 @@
 from utils import writeToLocalDB
-from dbHelper import get_expense_categories
+import dbHelper as db
 
-#writeToLocalDB()
-get_expense_categories()
+# writeToLocalDB()
+# db.get_expense_categories()
+
+db.get_month_expenses()

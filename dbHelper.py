@@ -1,6 +1,7 @@
 import sqlite3 as sql
 import config
 import dateutil.parser as parser
+from datetime import datetime
 
 INCOME = "income"
 EXPENSE = "expense"
@@ -82,6 +83,23 @@ def get_expense_categories():
     categories = execute(conn, sql, return_rows=True)
     print ([category[0] for category in categories[1]])
 
+def get_month_expenses(month=None):
+    # get expenses of a specific month
+    # month value is a number (Jam = 1, Feb = 2 ...)
+    # if no value is provided for month, the current month is used
+    sql="SELECT Date, Name, Value, Category FROM base"
+    
+    if month is None:
+        month = datetime.now().month
+    month = str(month)
+    if int(month)<10 and len(month)==1:
+        month = "0"+month
+    sql += f" WHERE strftime('%m', Date) = '{month}'"
+
+    sql += f" AND Type = '{EXPENSE}'"
+    
+    expenses = execute(conn, sql, return_rows=True)
+    print (expenses[1])
 
 # create and connect to the db if not already present
 database = config.DB_PATH

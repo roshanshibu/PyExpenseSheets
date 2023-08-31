@@ -2,7 +2,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from init import getCreds
 import config
-import dbHelper
+import dbHelper as db
 
 
 # get all the sheets in the given spreadsheet
@@ -50,9 +50,9 @@ def readTransactions(sheetTitle):
 
 def writeToLocalDB():
     allSheets = getAllSheets()
-    dbHelper.truncate_base_table()
+    db.truncate_base_table()
     for sheet in allSheets:
         transactions = readTransactions(sheet["title"])
         for t in transactions[1:]:
-            t_info = dbHelper.TransactionInfo(t[0], t[1], t[2], t[3], t[4])
-            dbHelper.insert_transaction_base_info(t_info)
+            t_info = db.TransactionInfo(t[0], t[1], t[2], t[3], t[4])
+            db.insert_transaction_base_info(t_info)
