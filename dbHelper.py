@@ -77,6 +77,11 @@ def insert_transaction_base_info(t_info):
     else:
         return False
 
+def get_expense_categories():
+    sql = f"SELECT DISTINCT Category FROM base WHERE Type=\"{EXPENSE}\""
+    categories = execute(conn, sql, return_rows=True)
+    print ([category[0] for category in categories[1]])
+
 
 # create and connect to the db if not already present
 database = config.DB_PATH
