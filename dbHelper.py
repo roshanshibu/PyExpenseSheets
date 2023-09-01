@@ -78,28 +78,59 @@ def insert_transaction_base_info(t_info):
     else:
         return False
 
-def get_expense_categories():
-    sql = f"SELECT DISTINCT Category FROM base WHERE Type=\"{EXPENSE}\""
-    categories = execute(conn, sql, return_rows=True)
-    print ([category[0] for category in categories[1]])
 
-def get_month_expenses(month=None):
+def insert_opening_balance(date, openingBalance):
+    sql = """
+                INSERT INTO base (Date, Name,
+                    Type, Value, 
+                    Category)
+                VALUES (?, 'Opening Balance', 'openingBalance', ?, 'openingBalance')
+            """
+    data_tup = (parser.parse(date), openingBalance)
+    if execute(conn, sql, data_tup):
+        conn.commit()
+        return True
+    else:
+        return False
+
+
+def get_expense_categories():
+    sql = f'SELECT DISTINCT Category FROM base WHERE Type="{EXPENSE}"'
+    categories = execute(conn, sql, return_rows=True)
+    return [category[0] for category in categories[1]]
+
+
+def get_month_expenses(month=None, category=None):
     # get expenses of a specific month
     # month value is a number (Jam = 1, Feb = 2 ...)
     # if no value is provided for month, the current month is used
-    sql="SELECT Date, Name, Value, Category FROM base"
-    
+    sql = "SELECT Date, Name, Value, Category FROM base"
+
+    # filter Month
     if month is None:
         month = datetime.now().month
     month = str(month)
-    if int(month)<10 and len(month)==1:
-        month = "0"+month
+    if int(month) < 10 and len(month) == 1:
+        month = "0" + month
     sql += f" WHERE strftime('%m', Date) = '{month}'"
 
+    # filter Category
+    if category is not None:
+        if category not in get_expense_categories():
+            raise ValueError("Category not found!")
+        sql += f" AND Category = '{category}'"
+
+    # Expenses only
     sql += f" AND Type = '{EXPENSE}'"
-    
+
     expenses = execute(conn, sql, return_rows=True)
-    print (expenses[1])
+    return expenses[1]
+
+
+def get_sum_of_expenses(month=None, category=None):
+    filteredExpenses = get_month_expenses(month, category)
+    return sum(expesne[2] for expesne in filteredExpenses)
+
 
 # create and connect to the db if not already present
 database = config.DB_PATH

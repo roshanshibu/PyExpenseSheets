@@ -5,6 +5,10 @@ CREDENTIALS_JSON_PATH = "./credentials.json"
 # Id of spreadsheet with similar structure as this template:
 # https://docs.google.com/spreadsheets/d/190Dxtfdx9tP4oebbgGtt70D5BkuNsAr2RBjpVA-VQiI/
 SPREADSHEET_ID = "190Dxtfdx9tP4oebbgGtt70D5BkuNsAr2RBjpVA-VQiI"
-RANGE_NAME = "<SHEET_TITLE>!A5:E"
+
+# The range corresponding to all transactions in a sheet
+RANGE_NAME = "<SHEET_TITLE>!A7:E"
+
+OPENING_BALANCE_CELL = "<SHEET_TITLE>!B3"
 
 DB_PATH = "./expenses.db"

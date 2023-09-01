@@ -1,7 +1,9 @@
 from utils import writeToLocalDB
 import dbHelper as db
 
-# writeToLocalDB()
+writeToLocalDB()
 # db.get_expense_categories()
 
-db.get_month_expenses()
+# db.get_month_expenses(category='Groceries')
+
+# print(db.get_sum_of_expenses(3, 'Groceries'))

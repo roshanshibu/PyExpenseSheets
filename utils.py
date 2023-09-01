@@ -4,6 +4,9 @@ from init import getCreds
 import config
 import dbHelper as db
 
+TRANSACTIONS = "transactions"
+OPENING_BALANCE = "openingBalance"
+
 
 # get all the sheets in the given spreadsheet
 def getAllSheets():
@@ -29,21 +32,27 @@ def readTransactions(sheetTitle):
         creds = getCreds()
         service = build("sheets", "v4", credentials=creds)
         sheet = service.spreadsheets()
+        # get all transactions of the month ...
+        # ... and also the opening balance
         result = (
             sheet.values()
-            .get(
+            .batchGet(
                 spreadsheetId=config.SPREADSHEET_ID,
-                range=config.RANGE_NAME.replace("<SHEET_TITLE>", sheetTitle),
+                ranges=[
+                    config.RANGE_NAME.replace("<SHEET_TITLE>", sheetTitle),
+                    config.OPENING_BALANCE_CELL.replace("<SHEET_TITLE>", sheetTitle),
+                ],
             )
             .execute()
         )
-        values = result.get("values", [])
-        if not values:
-            print("No data found.")
-
-        # for row in values:
-        #     print(f"{row[0]}, {row[1]}, {row[2]}, {row[3]}, {row[4]}")
-        return values
+        ranges = result.get("valueRanges", [])
+        transactions = []
+        if "values" not in ranges[0]:
+            print("No transactions found.")
+        else:
+            transactions = ranges[0]["values"]
+        openingBalance = float(ranges[1]["values"][0][0][:-2].replace(",", ""))
+        return {TRANSACTIONS: transactions, OPENING_BALANCE: openingBalance}
     except HttpError as err:
         print(err)
 
@@ -52,7 +61,13 @@ def writeToLocalDB():
     allSheets = getAllSheets()
     db.truncate_base_table()
     for sheet in allSheets:
-        transactions = readTransactions(sheet["title"])
-        for t in transactions[1:]:
+        data = readTransactions(sheet["title"])
+
+        if len(data[TRANSACTIONS]) == 0:
+            print(f"No transactions in this sheet {sheet['title']}")
+            continue
+
+        db.insert_opening_balance(data[TRANSACTIONS][0][0], data[OPENING_BALANCE])
+        for t in data[TRANSACTIONS]:
             t_info = db.TransactionInfo(t[0], t[1], t[2], t[3], t[4])
             db.insert_transaction_base_info(t_info)
