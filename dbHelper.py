@@ -123,9 +123,6 @@ def get_month_expenses(year=None, month=None, categories=None):
 
     # filter Categories
     if categories is not None:
-        # check if the provided categories are valid categories from db
-        if not all(c in get_expense_categories() for c in categories):
-            raise ValueError("Category not found!")
         categoriesString = "','".join(categories)
         sql += f" AND Category IN ('{categoriesString}')"
 
@@ -139,6 +136,17 @@ def get_month_expenses(year=None, month=None, categories=None):
 def get_sum_of_expenses(categories, year=None, month=None):
     filteredExpenses = get_month_expenses(year=year, month=month, categories=categories)
     return sum(expesne[2] for expesne in filteredExpenses)
+
+
+def get_expense_trend_by_category(category):
+    sql = f"""SELECT strftime('%m', Date), strftime('%Y', Date), Category, SUM(Value) 
+                FROM base 
+                WHERE Category='{category}'
+                    AND Type='expense'
+                GROUP BY Category, strftime('%m-%Y', Date) 
+                ORDER BY Date DESC; """
+    expenses = execute(conn, sql, return_rows=True)
+    return expenses[1]
 
 
 # create and connect to the db if not already present

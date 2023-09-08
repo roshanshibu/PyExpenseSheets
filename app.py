@@ -1,8 +1,7 @@
 from utils import updateLocalDB
 import dbHelper as db
 
-updateLocalDB()
-
+# updateLocalDB()
 
 # print(db.get_expense_categories())
 
@@ -14,3 +13,5 @@ updateLocalDB()
 # print(*db.get_month_expenses(), sep="\n") # all expenses of current month
 
 # print(db.get_sum_of_expenses(month=3, categories=["Groceries"]))
+
+print(*db.get_expense_trend_by_category("Groceries"), sep="\n")
