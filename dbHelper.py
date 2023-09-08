@@ -28,6 +28,8 @@ def execute(conn, sql_command, params=None, return_rows=False):
     ret = False
     try:
         c = conn.cursor()
+        # for debugging sql statements
+        # conn.set_trace_callback(print)
         if params is None:
             c.execute(sql_command)
         else:
@@ -105,13 +107,11 @@ def get_month_expenses(year=None, month=None, categories=None):
     # month value is a number (Jam = 1, Feb = 2 ...)
     # if no value is provided for month, the current month is used
     # if no value is provided for year, the current year is used
-    sql = "SELECT Date, Name, Value, Category FROM base"
 
     # filter Year
     if year is None:
         year = datetime.now().year
     year = str(year)
-    sql += f" WHERE strftime('%Y', Date) = '{year}'"
 
     # filter Month
     if month is None:
@@ -119,17 +119,20 @@ def get_month_expenses(year=None, month=None, categories=None):
     month = str(month)
     if int(month) < 10 and len(month) == 1:
         month = "0" + month
-    sql += f" AND strftime('%m', Date) = '{month}'"
 
     # filter Categories
+    categoriesString = ""
     if categories is not None:
         categoriesString = "','".join(categories)
-        sql += f" AND Category IN ('{categoriesString}')"
 
-    # Expenses only
-    sql += f" AND Type = '{EXPENSE}'"
-
-    expenses = execute(conn, sql, return_rows=True)
+    sql = f"""SELECT Date, Name, Value, Category 
+                FROM base
+                WHERE strftime('%Y', Date) = ?
+                AND strftime('%m', Date) = ?
+                {'' if len(categoriesString) == 0 else f"AND Category IN ('{categoriesString}')"}
+                AND Type = 'expense'
+                """
+    expenses = execute(conn, sql, (year, month), return_rows=True)
     return expenses[1]
 
 
@@ -139,13 +142,13 @@ def get_sum_of_expenses(categories, year=None, month=None):
 
 
 def get_expense_trend_by_category(category):
-    sql = f"""SELECT strftime('%m', Date), strftime('%Y', Date), Category, SUM(Value) 
+    sql = """SELECT strftime('%m', Date), strftime('%Y', Date), Category, SUM(Value) 
                 FROM base 
-                WHERE Category='{category}'
+                WHERE Category = ?
                     AND Type='expense'
                 GROUP BY Category, strftime('%m-%Y', Date) 
                 ORDER BY Date DESC; """
-    expenses = execute(conn, sql, return_rows=True)
+    expenses = execute(conn, sql, (category,), return_rows=True)
     return expenses[1]
 
 
