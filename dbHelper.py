@@ -141,14 +141,17 @@ def get_sum_of_expenses(categories, year=None, month=None):
     return sum(expesne[2] for expesne in filteredExpenses)
 
 
-def get_expense_trend_by_category(category):
-    sql = """SELECT strftime('%m', Date), strftime('%Y', Date), Category, SUM(Value) 
+def get_expense_trend_by_categories(categories):
+    categoriesString = ""
+    if categories is not None:
+        categoriesString = "','".join(categories)
+    sql = f"""SELECT strftime('%m', Date), strftime('%Y', Date), Category, SUM(Value) 
                 FROM base 
-                WHERE Category = ?
-                    AND Type='expense'
+                WHERE Type='expense'
+                {'' if len(categoriesString) == 0 else f"AND Category IN ('{categoriesString}')"}
                 GROUP BY Category, strftime('%m-%Y', Date) 
                 ORDER BY Date DESC; """
-    expenses = execute(conn, sql, (category,), return_rows=True)
+    expenses = execute(conn, sql, return_rows=True)
     return expenses[1]
 
 

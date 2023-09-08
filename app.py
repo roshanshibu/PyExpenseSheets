@@ -14,4 +14,6 @@ import dbHelper as db
 
 # print(db.get_sum_of_expenses(month=3, categories=["Groceries"]))
 
-print(*db.get_expense_trend_by_category("Groceries"), sep="\n")
+# print(*db.get_expense_trend_by_categories([]), sep="\n")
+# print(*db.get_expense_trend_by_categories(["Groceries"]), sep="\n")
+print(*db.get_expense_trend_by_categories(["Groceries", "Food & Drink"]), sep="\n")
