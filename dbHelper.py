@@ -100,11 +100,18 @@ def get_expense_categories():
     return [category[0] for category in categories[1]]
 
 
-def get_month_expenses(month=None, category=None):
-    # get expenses of a specific month
+def get_month_expenses(year=None, month=None, categories=None):
+    # get expenses of a specific month and year
     # month value is a number (Jam = 1, Feb = 2 ...)
     # if no value is provided for month, the current month is used
+    # if no value is provided for year, the current year is used
     sql = "SELECT Date, Name, Value, Category FROM base"
+
+    # filter Year
+    if year is None:
+        year = datetime.now().year
+    year = str(year)
+    sql += f" WHERE strftime('%Y', Date) = '{year}'"
 
     # filter Month
     if month is None:
@@ -112,13 +119,15 @@ def get_month_expenses(month=None, category=None):
     month = str(month)
     if int(month) < 10 and len(month) == 1:
         month = "0" + month
-    sql += f" WHERE strftime('%m', Date) = '{month}'"
+    sql += f" AND strftime('%m', Date) = '{month}'"
 
-    # filter Category
-    if category is not None:
-        if category not in get_expense_categories():
+    # filter Categories
+    if categories is not None:
+        # check if the provided categories are valid categories from db
+        if not all(c in get_expense_categories() for c in categories):
             raise ValueError("Category not found!")
-        sql += f" AND Category = '{category}'"
+        categoriesString = "','".join(categories)
+        sql += f" AND Category IN ('{categoriesString}')"
 
     # Expenses only
     sql += f" AND Type = '{EXPENSE}'"
@@ -127,8 +136,8 @@ def get_month_expenses(month=None, category=None):
     return expenses[1]
 
 
-def get_sum_of_expenses(month=None, category=None):
-    filteredExpenses = get_month_expenses(month, category)
+def get_sum_of_expenses(categories, year=None, month=None):
+    filteredExpenses = get_month_expenses(year=year, month=month, categories=categories)
     return sum(expesne[2] for expesne in filteredExpenses)
 
 

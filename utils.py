@@ -27,44 +27,67 @@ def getAllSheets():
         print(err)
 
 
-def readTransactions(sheetTitle):
+def readTransactions(sheetTitles):
     try:
         creds = getCreds()
         service = build("sheets", "v4", credentials=creds)
         sheet = service.spreadsheets()
-        # get all transactions of the month ...
-        # ... and also the opening balance
+        # get all transactions of the month
+        # and also the opening balance
+        # in a single api call
         result = (
             sheet.values()
             .batchGet(
                 spreadsheetId=config.SPREADSHEET_ID,
                 ranges=[
-                    config.RANGE_NAME.replace("<SHEET_TITLE>", sheetTitle),
-                    config.OPENING_BALANCE_CELL.replace("<SHEET_TITLE>", sheetTitle),
+                    range
+                    for rangeTuple in [
+                        (
+                            config.RANGE_NAME.replace("<SHEET_TITLE>", sheet["title"]),
+                            config.OPENING_BALANCE_CELL.replace(
+                                "<SHEET_TITLE>", sheet["title"]
+                            ),
+                        )
+                        for sheet in sheetTitles
+                    ]
+                    for range in rangeTuple
                 ],
             )
             .execute()
         )
-        ranges = result.get("valueRanges", [])
-        transactions = []
-        if "values" not in ranges[0]:
-            print("No transactions found.")
-        else:
-            transactions = ranges[0]["values"]
-        openingBalance = float(ranges[1]["values"][0][0][:-2].replace(",", ""))
-        return {TRANSACTIONS: transactions, OPENING_BALANCE: openingBalance}
+        ranges = iter(result.get("valueRanges", []))
+        all_transactions = []
+        for dataRange in ranges:
+            t = {}
+            transactionDataRange = dataRange
+            openingBanlanceDataRange = next(ranges)
+
+            t[OPENING_BALANCE] = float(
+                openingBanlanceDataRange["values"][0][0][:-2].replace(",", "")
+            )
+
+            if "values" not in transactionDataRange:
+                t[TRANSACTIONS] = []
+                print(f"No transaction in sheet and range: {dataRange['range']}")
+            else:
+                t[TRANSACTIONS] = transactionDataRange["values"]
+
+            all_transactions.append(t)
+
+        return all_transactions
     except HttpError as err:
         print(err)
 
 
-def writeToLocalDB():
+def updateLocalDB():
     allSheets = getAllSheets()
     db.truncate_base_table()
-    for sheet in allSheets:
-        data = readTransactions(sheet["title"])
 
+    allTransactions = readTransactions([sheet for sheet in allSheets])
+
+    for data in allTransactions:
         if len(data[TRANSACTIONS]) == 0:
-            print(f"No transactions in this sheet {sheet['title']}")
+            print(f"No transactions in this sheet {data}. Skipping...")
             continue
 
         db.insert_opening_balance(data[TRANSACTIONS][0][0], data[OPENING_BALANCE])
