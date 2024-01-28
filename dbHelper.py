@@ -138,7 +138,7 @@ def get_month_expenses(year=None, month=None, categories=None):
 
 def get_sum_of_expenses(categories, year=None, month=None):
     filteredExpenses = get_month_expenses(year=year, month=month, categories=categories)
-    return sum(expesne[2] for expesne in filteredExpenses)
+    return sum(expense[2] for expense in filteredExpenses)
 
 
 def get_expense_trend_by_categories(categories):
